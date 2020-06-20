@@ -1,0 +1,22 @@
+#cpudef
+{
+    #bits 8
+	
+	nop -> 0x00
+	lda {address} -> 0x01 @ address[7:0]
+	add {address} -> 0x02 @ address[7:0]
+	sub {address} -> 0x03 @ address[7:0]
+	sta {address} -> 0x04 @ address[7:0]
+	lda #{value} -> 0x05 @ value[7:0]
+	jmp {address} -> 0x06 @ address[7:0]
+	jc {address} -> 0x07 @ address[7:0]
+	jz {address} -> 0x08 @ address[7:0]
+	add #{value} -> 0x09 @ value[7:0]
+	sub #{value} -> 0x0a @ value[7:0]
+	out -> 0x0e
+	hlt -> 0x0f
+	psh -> 0x10
+	pop -> 0x11
+	jsr {address} -> 0x12 @ address[7:0]
+	rts -> 0x13
+}
