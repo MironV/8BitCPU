@@ -314,11 +314,11 @@ A stack pointer is conceptually similar to a program counter. It stores an addre
 1. Place a 74LS00 NAND gate, 74LS245 transceiver, and two 74LS193 counters in a row next to your output register. Wire up power and ground.
 2. Wire the the Carry output of the right 193 to the Count Up input of the left 193. Do the same for the Borrow output and Count Down input.
 3. Connect the Clear input between the two 193s and with an active high reset line. The B register has one you can use on its 74LS173s.
-4. Connect the Load input between the two 193s and to a new active low control line called SI on your 74LS138 decoder.
+4. Connect the Load input between the two 193s and to a new active low control line called `SI` on your 74LS138 decoder.
 5. Connect the QA-QD outputs of the lower counter to A8-A5 and the upper counter to A4-A1. Pay special attention because the output are in a weird order (BACD) and you want to make sure the lower A is connected to A8 and the upper A is connected to A4.
 6. Connect the A-D inputs of the lower counter to B8-B5 and the upper counter to B4-B1. Again, the inputs are in a weird order and on both sides of the chip so pay special attention.
 7. Connect the B1-B8 outputs of the 74LS245 transceiver to the bus.
-8. On the 74LS245 transceiver, connect DIR to power (high) and connect OE to a new active low control line called SO on your 74LS138 decoder.
+8. On the 74LS245 transceiver, connect DIR to power (high) and connect OE to a new active low control line called `SO` on your 74LS138 decoder.
 9. Add 8 LEDs and resistors to the lower part of the 74LS245 transceiver (A1-A8) so you can see what's going on with the stack pointer.
 
 **Enabling Increment & Decrement**
@@ -327,8 +327,8 @@ We've now connected everything but the Count Up and Count Down inputs. The way t
 
 1. Take the clock from the 74LS08 AND gate and make it an input into two different NAND gates on the 74LS00.
 2. Take the output from one NAND gate and wire it to the Count Up input on the lower 74LS193 counter. Take the other output and wire it to the Count Down input.
-3. Wire up a new active high control line called SP from your ROM to the NAND gate going into Count Up.
-4. Wire up a new active high control line called SM from your ROM to the NAND gate going into Count Down.
+3. Wire up a new active high control line called `SP` from your ROM to the NAND gate going into Count Up.
+4. Wire up a new active high control line called `SM` from your ROM to the NAND gate going into Count Down.
 
 At this point, everything should be working. Your counter should be able to reset, input a value, output a value, and increment/decrement. But the issue is it'll be writing to $0000 to $00FF in the RAM! Let's fix that.
 
@@ -336,7 +336,7 @@ At this point, everything should be working. Your counter should be able to rese
 
 We need the stack to be in a different place in memory than our regular program. The problem is, we only have an 8-bit bus, so how do we tell the RAM we want a higher address? We'll use a special control line to do this:
 
-1. Wire up an active high line from the 28C16 ROM to A8 on the [Cypress CY7C199](https://media.digikey.com/pdf/Data%20Sheets/Cypress%20PDFs/CY7C199.pdf) RAM.
+1. Wire up an active high line called `SA` from the 28C16 ROM to A8 on the [Cypress CY7C199](https://media.digikey.com/pdf/Data%20Sheets/Cypress%20PDFs/CY7C199.pdf) RAM.
 2. Add an LED and resistor so you can see when the stack is active.
 
 That's it! Now, whenever we need the stack we can use a combination of the control line and stack pointer to access $0100 to $01FF.
@@ -374,13 +374,13 @@ I've started running low on opcodes at this point. Luckily, we still have two fr
 
 **Updating the ROM Writer**
 
-At this point, you simply need to update the Arduino writer to support 32 instructions vs. the current 16. So, for example, `UCODE_TEMPLATE[16][8]` becomes `UCODE_TEMPLATE[32][8]` and fill in the blanks with `nop`. The problem is that the Arduino only has so much memory and with the way Ben's code is written to support conditional jumps, it starts to get tight.
+At this point, you simply need to update the Arduino writer to support 32 instructions vs. the current 16. So, for example, `UCODE_TEMPLATE[16][8]` becomes `UCODE_TEMPLATE[32][8]` and you fill in the 16 new array elements with `nop`. The problem is that the Arduino only has so much memory and with the way Ben's code is written to support conditional jumps, it starts to get tight.
 
 I bet the code can be re-written to handle this, but I had a [TL866II Plus EEPROM programmer](https://www.amazon.com/gp/product/B07CDD9PGT/) handy from the 6502 build and I felt it would be easier to start using that instead. Converting to a regular C program is really simple ([source code](https://github.com/MironV/8BitCPU/blob/master/ROM_Programmer/makerom.c)):
 
 1. Copy all the `#define`, global `const` arrays (don't forget to expand them from 16 to 32), and `void initUCode()`. Add `#include <stdio.h>` and `#include <string.h>` to the top.
-2. In your classic `int main (void)` C function, after initializing, make two arrays: `char ucode_upper[2048]` and `char ucode_lower[2048]`.
-3. Take your existing loop code and loop through all addresses: `for (int address = 0; address < 2048; address++)`.
+2. In your traditional `int main (void)` C function, after initializing with `initUCode()`, make two arrays: `char ucode_upper[2048]` and `char ucode_lower[2048]`.
+3. Take your existing loop code that loops through all addresses: `for (int address = 0; address < 2048; address++)`.
 4. Modify instruction to be 5-bit with `int instruction = (address & 0b00011111000) >> 3;`.
 5. When writing, just write to the arrays like so: `ucode_lower[address] = ucode[flags][instruction][step];` and `ucode_upper[address] = ucode[flags][instruction][step] >> 8;`.
 6. Open a new file with `FILE *f = fopen("rom_upper.hex", "wb");`, write to it with `fwrite(ucode_upper, sizeof(char), sizeof(ucode_upper), f);` and close it with `fclose(f);`. Repeat this with the lower ROM too.
